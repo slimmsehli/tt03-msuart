@@ -303,10 +303,6 @@ module MSUART(
   output  [7:0] io_out
   );
   
-  
-  input [7:0] io_in,
-  output [7:0] io_out
-  
   //io_in  => datain4,datain3,datain2,datain1,rx,send,reset,clk
   //io_out => non,non,busy,tx,dataout4,dataout3,dataout2,dataout1
   
