@@ -299,12 +299,16 @@ end
 endmodule
 
 module MSUART(
-  input  [7:0] inputs, 
-  output  [7:0] outputs
+  input  [7:0] io_in, 
+  output  [7:0] io_out
   );
   
-  //inputs  => datain4,datain3,datain2,datain1,rx,send,reset,clk
-  //outputs => non,non,busy,tx,dataout4,dataout3,dataout2,dataout1
+  
+  input [7:0] io_in,
+  output [7:0] io_out
+  
+  //io_in  => datain4,datain3,datain2,datain1,rx,send,reset,clk
+  //io_out => non,non,busy,tx,dataout4,dataout3,dataout2,dataout1
   
   wire ms_clk;
   wire ms_reset;
@@ -315,15 +319,15 @@ module MSUART(
   wire ms_rx;
   wire ms_tx;
   
-  assign ms_clk = inputs[0];
-  assign ms_reset = inputs[1];
-  assign ms_send = inputs[2];
-  assign ms_rx = inputs[3];
-  //assign ms_datain = inputs[7:4];
+  assign ms_clk = io_in[0];
+  assign ms_reset = io_in[1];
+  assign ms_send = io_in[2];
+  assign ms_rx = io_in[3];
+  //assign ms_datain = io_in[7:4];
   
-  assign outputs[3:0] = ms_dataout[3:0]; 
-  assign outputs[4] = ms_tx;
-  assign outputs[5] = tb_busytx;
+  assign io_out[3:0] = ms_dataout[3:0]; 
+  assign io_out[4] = ms_tx;
+  assign io_out[5] = tb_busytx;
     
   wire tb_donetx, tb_busytx;
 	wire tb_donerx, tb_errrx;
@@ -331,7 +335,7 @@ module MSUART(
    	
 	/*always @(posedge ms_send) begin
 	  if (!tb_busytx) begin
-	    ms_datain <=  inputs[7:4];
+	    ms_datain <=  io_in[7:4];
 	    tb_start <= 1'b1;
 	  end
 	end
@@ -341,7 +345,7 @@ module MSUART(
 	
 	always @(posedge tb_tick2) begin
 		if(ms_send & !tb_busytx) begin
-			ms_datain <=  inputs[7:4];
+			ms_datain <=  io_in[7:4];
 	    		tb_start <= 1'b1;
 		end
 	end
