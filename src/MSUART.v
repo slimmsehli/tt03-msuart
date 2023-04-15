@@ -43,7 +43,7 @@ always @(posedge TICK) begin
 	end
 end
 
-always @(posedge CLK) begin
+/*always @(posedge CLK) begin
 	if (RESETN) begin
 		DOUT 		<= 1'b1; 
 		BUSY		<= 1'b0;
@@ -52,7 +52,7 @@ always @(posedge CLK) begin
 		data    	<= 8'b0;
 		txparitybitout 	<= 1'b0;
 	end
-end
+end*/
 
 initial begin
 	DOUT 		<= 1'b1; 
@@ -63,7 +63,16 @@ initial begin
 	txparitybitout 	<= 1'b0;
 end
 // the main State machine
-always @(posedge internalclk) begin
+always @(posedge internalclk or posedge RESETN) begin
+	if(RESETN) begin
+		DOUT 		<= 1'b1; 
+		BUSY		<= 1'b0;
+		DONE 		<= 1'b1;
+		dataindex 	<= 3'b0;
+		data    	<= 8'b0;
+		txparitybitout 	<= 1'b0;
+	end
+	else begin
 	case (state)
 		default : begin
 			state <= `IDLE;
@@ -96,8 +105,8 @@ always @(posedge internalclk) begin
 			if (dataindex==tempdatalength) begin
 				dataindex	<= 3'b0;
 				// even parity
-				txparitybitout 	= ^data; 
-				state 			<= `PARITY_BIT;
+				txparitybitout 	<= ^data; 
+				state 		<= `PARITY_BIT;
 			end
 			else
 				dataindex 	<= dataindex + 1'b1;
@@ -114,6 +123,7 @@ always @(posedge internalclk) begin
 			state	<= `IDLE;
 		end
 	endcase
+	end
 end
 endmodule
 
@@ -138,13 +148,12 @@ module MS_UART_RX(
 	wire [7:0] tempdatalength;
 		assign tempdatalength = 8'b00001000;
 	
-	reg RXDEBUG = 1'b0;
 	// states of state machine
     reg [2:0] RESET 	= 3'b000;
-    reg [2:0] IDLE 		= 3'b001;
+    reg [2:0] IDLE 	= 3'b001;
     reg [2:0] DATA_BITS = 3'b010;
     reg [2:0] STOP_BIT 	= 3'b011;
-	reg [2:0] PARITY_BIT= 3'b100;
+    reg [2:0] PARITY_BIT= 3'b100;
 	
 	reg [2:0] state;
 	reg [3:0] bitindex 	= 4'b0; //index for data
@@ -164,14 +173,18 @@ initial begin
 	rxparitybitin 	<= 1'b0;
 end
 
-always @(posedge CLK) begin
+/*always @(posedge CLK) begin
 	if (RESETN) begin
-		state = RESET;
+		state <= RESET;
 	end
-end
+end*/
 
-always @(posedge TICK) begin
-	if (!EN) state = RESET;
+always @(posedge TICK or posedge RESETN) begin
+	if (RESETN) begin
+		state <= RESET;
+	end
+	else begin
+	if (!EN) state <= RESET;
 	
 	case (state)
 		RESET : begin 
@@ -186,7 +199,6 @@ always @(posedge TICK) begin
 		end
 		IDLE : begin
 			if (counter==(tempoversampling-4'b1000)) begin
-				if(RXDEBUG) $display("RX : state 1 IDLE --> state 2 DATA_BITS"); 
 				ERR 		<= 1'b0;
 				bitindex 	<= 4'b0;
 				counter 	<= 5'b0;
@@ -259,6 +271,7 @@ always @(posedge TICK) begin
 			if (EN)	state <= IDLE;
 		end
 	endcase
+	end
 end
 endmodule
 
@@ -302,7 +315,7 @@ module MSUART(
   input  [7:0] io_in, 
   output  [7:0] io_out
   );
-  
+ 
   //io_in  => datain4,datain3,datain2,datain1,rx,send,reset,clk
   //io_out => non,non,busy,tx,dataout4,dataout3,dataout2,dataout1
   
@@ -321,47 +334,41 @@ module MSUART(
   assign ms_rx = io_in[3];
   //assign ms_datain = io_in[7:4];
   
-  assign io_out[3:0] = ms_dataout[3:0]; 
+  assign io_out = {2'b0, tb_busytx, ms_tx, ms_dataout[3:0]};
+  /*assign io_out[3:0] = ms_dataout[3:0]; 
   assign io_out[4] = ms_tx;
-  assign io_out[5] = tb_busytx;
+  assign io_out[5] = tb_busytx;*/
     
   wire tb_donetx, tb_busytx;
-	wire tb_donerx, tb_errrx;
-	reg tb_start;
-   	
-	/*always @(posedge ms_send) begin
-	  if (!tb_busytx) begin
-	    ms_datain <=  io_in[7:4];
-	    tb_start <= 1'b1;
-	  end
-	end
-	always @(negedge tb_tick2) begin
-		tb_start <= 1'b0;
-	end*/
+  wire tb_donerx, tb_errrx;
+  reg ms_start;
 	
 	always @(posedge tb_tick2) begin
 		if(ms_send & !tb_busytx) begin
 			ms_datain <=  io_in[7:4];
-	    		tb_start <= 1'b1;
+	    		ms_start <= 1'b1;
+		end
+		if (tb_busytx) begin
+			ms_start <= 1'b0;
 		end
 	end
 	
-	always@(posedge tb_busytx) begin
-		tb_start <= 1'b0;
-	end
+	/*always@(posedge tb_busytx) begin
+		ms_start <= 1'b0;
+	end*/
 	
 
   // TX MODULE
 	MS_UART_TX DUT_TX(
 	.CLK(ms_clk),		
 	.RESETN(ms_reset),
-	.START(tb_start),
+	.START(ms_start),
 	.TICK(tb_tick2),
 	.DIN(ms_datain),
 	
 	.DONE(tb_donetx),
 	.BUSY(tb_busytx),
-	.DOUT(ms_rx));
+	.DOUT(ms_tx));
 	
 	// RX MODULE
   MS_UART_RX DUT_RX(
