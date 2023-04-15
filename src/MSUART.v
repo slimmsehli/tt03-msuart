@@ -352,11 +352,6 @@ module MSUART(
 			ms_start <= 1'b0;
 		end
 	end
-	
-	/*always@(posedge tb_busytx) begin
-		ms_start <= 1'b0;
-	end*/
-	
 
   // TX MODULE
 	MS_UART_TX DUT_TX(
