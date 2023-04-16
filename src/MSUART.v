@@ -19,7 +19,7 @@ module MS_UART_TX(
 	
 	
 	wire [4:0] tempoversampling;
-		assign tempoversampling = 5'b01111;
+		assign tempoversampling = 5'b00111;
 	wire [7:0] tempdatalength;
 	assign tempdatalength = 3'b111;
 
@@ -42,17 +42,6 @@ always @(posedge TICK) begin
 		internalclk <= 1'b0;
 	end
 end
-
-/*always @(posedge CLK) begin
-	if (RESETN) begin
-		DOUT 		<= 1'b1; 
-		BUSY		<= 1'b0;
-		DONE 		<= 1'b1;
-		dataindex 	<= 3'b0;
-		data    	<= 8'b0;
-		txparitybitout 	<= 1'b0;
-	end
-end*/
 
 initial begin
 	DOUT 		<= 1'b1; 
@@ -77,11 +66,11 @@ always @(posedge internalclk or posedge RESETN) begin
 		default : begin
 			state <= `IDLE;
 			if (START) begin // THIS WAS (START & EN)
-                data    <= DIN; // save a copy of input data
-				DONE 	<= 1'b1;
-				BUSY	<= 1'b0;
-                state   <= `START_BIT;
-            end
+                	data    <= DIN; // save a copy of input data
+			DONE 	<= 1'b1;
+			BUSY	<= 1'b0;
+                	state   <= `START_BIT;
+            		end
 		end
 		`IDLE : begin // 2 - reset everything to 0 and put high the tx line
 			DOUT 		<= 1'b1; 
@@ -144,7 +133,7 @@ module MS_UART_RX(
 	output reg ERR);
 	
 	wire [4:0] tempoversampling;
-		assign tempoversampling = 5'b01111;
+		assign tempoversampling = 5'b00111;
 	wire [7:0] tempdatalength;
 		assign tempdatalength = 8'b00001000;
 	
@@ -173,12 +162,6 @@ initial begin
 	rxparitybitin 	<= 1'b0;
 end
 
-/*always @(posedge CLK) begin
-	if (RESETN) begin
-		state <= RESET;
-	end
-end*/
-
 always @(posedge TICK or posedge RESETN) begin
 	if (RESETN) begin
 		state <= RESET;
@@ -189,7 +172,6 @@ always @(posedge TICK or posedge RESETN) begin
 	case (state)
 		RESET : begin 
 			DONE 			<= 1'b0;
-			//BUSY 			<= 1'b0;
 			ERR 			<= 1'b0;
 			bitindex 		<= 4'b0;
 			counter 		<= 5'b0;
@@ -198,7 +180,7 @@ always @(posedge TICK or posedge RESETN) begin
 			if (EN)	state 	<= IDLE;
 		end
 		IDLE : begin
-			if (counter==(tempoversampling-4'b1000)) begin
+			if (counter==(tempoversampling-4'b0100)) begin
 				ERR 		<= 1'b0;
 				bitindex 	<= 4'b0;
 				counter 	<= 5'b0;
@@ -281,13 +263,22 @@ endmodule
 //----------------------------------------------------------------------
 //------------------------------BAUDRATE--------------------------------
 
+// Input frequency of 6.25Kz T=160us
+// Baudrate Fbaud= 150Hz Tbaud=6666.667us
+// Oversamplign by 8 Fsamp=1200Hz Tsamp=833.333us
+
+// baudrate genert=ator devidor = 5
+// Acctual Sampling freq = 1250Hz
+// Acctual Baudrate freq = 156.25Hz
+// Diff in baudrate from standard =6.25Hz or 4.16%
+
 module MS_UART_BAUDGEN(
   input CLK,   		 // board clock
   input RESETN,
   output reg BAUDTICK // baud rate for rx
 );
 
-reg [15:0] UBRR = 16'h0007;
+reg [15:0] UBRR = 16'h0005;
 reg [16 - 1:0] Counter = 0;
 
 initial begin
@@ -310,6 +301,12 @@ always @(posedge CLK) begin
 	end
 end
 endmodule
+
+//----------------------------------------------------------------------
+//----------------------------------------------------------------------
+//----------------------------------------------------------------------
+//----------------------------------------------------------------------
+//------------------------------MSUART--------------------------------
 
 module MSUART(
   input  [7:0] io_in, 
@@ -352,9 +349,10 @@ module MSUART(
 			ms_start <= 1'b0;
 		end
 	end
+	
 
   // TX MODULE
-	MS_UART_TX DUT_TX(
+  MS_UART_TX DUT_TX(
 	.CLK(ms_clk),		
 	.RESETN(ms_reset),
 	.START(ms_start),
@@ -365,7 +363,7 @@ module MSUART(
 	.BUSY(tb_busytx),
 	.DOUT(ms_tx));
 	
-	// RX MODULE
+  // RX MODULE
   MS_UART_RX DUT_RX(
 	.CLK(ms_clk),
 	.RESETN(ms_reset),
@@ -376,7 +374,8 @@ module MSUART(
 	.DONE(tb_donerx),
 	.ERR(tb_errrx));
 	
-	MS_UART_BAUDGEN DUT_BAUDGEN(
+  // BAUDRATE MODULE
+  MS_UART_BAUDGEN DUT_BAUDGEN(
   .CLK(ms_clk),   		 // board clock
   .RESETN(ms_reset),
   .BAUDTICK(tb_tick2) // baud rate for rx
