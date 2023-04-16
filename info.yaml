@@ -25,10 +25,17 @@ documentation:
 # Longer description of how the project works. You can use standard markdown format.
   how_it_works: |
       It uses a baudrate generator, rx and tx modules
+      the UART is designed to send 8bits of data in a Serial manner compled with UART protocle
+      the sequence is => 1 start bit | 8 data bits | 1 even parity bit | 1 stop bit
+      for the data bit you can only change 4 most significant bits, the 4 most significant bits are set to 0 due to the input limits 
 
 # Instructions on how someone could test your project, include things like what buttons do what and how to set the clock if needed
   how_to_test:  |
-      send 5bits input data to the uart and wait for the the 5 bits to be show on the outputs while the TX and RX pins are connected 
+      to test the design just put the send bit to 1 to enable sending and then put the data to the 4bits of th input 
+      and they will be shifted on the output TX as serial UART data frame
+      the busy bit indicate when the uart start a new frame and it is busy
+      for test a simple tb.v is next to the design code
+      
 
 # A description of what the inputs do
   inputs:               
@@ -36,18 +43,18 @@ documentation:
     - reset
     - send
     - RX
-    - inbit1
-    - inbit2
-    - inbit3
-    - inbit4
+    - datain1
+    - datain2
+    - datain3
+    - datain4
 # A description of what the outputs do
   outputs:
-    - outbit1
-    - outbit2
-    - outbit3
-    - outbit4
+    - dataout1
+    - dataout2
+    - dataout3
+    - dataout4
     - TX
-    - non
+    - rxbusy
     - non
     - non
 
@@ -56,5 +63,5 @@ documentation:
   external_hw:  ""      # Describe any external hardware needed
   discord:      ""      # Your discord handle, used for communication and automatically assigning tapeout role after a submission
   doc_link:     ""      # URL to longer form documentation, eg the README.md in your repository
-  clock_hz:     1000000       # Clock frequency in Hz (if required)
+  clock_hz:     6250Hz       # Clock frequency in Hz (if required)
   picture:      ""      # relative path to a picture in your repository
