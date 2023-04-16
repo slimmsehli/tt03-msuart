@@ -24,17 +24,17 @@ documentation:
 
 # Longer description of how the project works. You can use standard markdown format.
   how_it_works: |
-      It uses a baudrate generator, rx and tx modules
-      the UART is designed to send 8bits of data in a Serial manner compled with UART protocle
-      the sequence is => 1 start bit | 8 data bits | 1 even parity bit | 1 stop bit
-      for the data bit you can only change 4 most significant bits, the 4 most significant bits are set to 0 due to the input limits 
+      It uses a baudrate generator, rx and tx modules. 
+      The UART is designed to send 8bits of data in a Serial manner complied with UART protocol.
+      The sequence is => 1 start bit | 8 data bits | 1 even parity bit | 1 stop bit.
+      For the data bits you can only change 4 less significant bits, the 4 most significant bits are set to 0 due to the number of input limits. 
 
 # Instructions on how someone could test your project, include things like what buttons do what and how to set the clock if needed
   how_to_test:  |
-      to test the design just put the send bit to 1 to enable sending and then put the data to the 4bits of th input 
-      and they will be shifted on the output TX as serial UART data frame
-      the busy bit indicate when the uart start a new frame and it is busy
-      for test a simple tb.v is next to the design code
+      To test the design just put the send bit to 1 to enable sending and then put the data to the 4bits of the input 
+      and they will be shifted on the output TX as serial UART data frame.
+      The busy bit indicate when the uart start a new frame and it is busy sending.
+      if you connect the RX to the TX pin you can see the 4 bits input are found on the output data bits. 
       
 
 # A description of what the inputs do
